@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Window with Floating Button</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        iframe {
+            width: 100%;
+            height: 100vh;
+            border: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+       .chat-window {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 60%;
+            height: 100%;
+            border-left: 1px solid #ccc;
+            background-color: white;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+            display: none;
+            flex-direction: column;
+            resize: horizontal;
+            overflow: hidden;
+        }
+        .chat-header {
+            background-color: #BB3A83;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-body {
+            padding: 10px;
+            height: calc(100% - 110px); /* Adjusted height to account for header and footer */
+            overflow-y: auto;
+        }
+        .floating-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        .minimize-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        .chat-message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            word-wrap: break-word;
+            display: flex;
+            align-items: center;
+        }
+        .user-message {
+            text-align: right;
+            color: blue;
+            background-color: #e0f7fa;
+            justify-content: flex-end;
+        }
+        .ai-message {
+            text-align: left;
+            color: green;
+            background-color: #f1f8e9;
+            justify-content: flex-start;
+        }
+        .icon-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .message-icon {
+            margin-right: 10px;
+        }
+        .user-icon {
+            margin-left: 10px;
+        }
+    </style>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <iframe src="https://diwakaraditi30.wixsite.com/cardiac-help/"></iframe>
+
+    <button style="width: 100px; height: 100px; background-color: #BB3A83" class="floating-button" onclick="toggleChatWindow()">💬</button>
+
+   <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            Chat
+            <div>
+                <select id="languageSelect" class="icon-button">
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="hi">Hindi</option>
+                    <option value="zh">Mandarin</option>
+                </select>
+                <button class="icon-button" onclick="exportPDF()">📄</button>
+                <button class="minimize-button" onclick="toggleChatWindow()">−</button>
+            </div>
+        </div>
+        <div class="chat-body">
+            <div id="chatHistory" class="chat-history"></div>
+        </div>
+        <div class="chat-footer">
+            <form id="questionForm" class="mb-4">
+                <div class="form-group" required style="margin-left: 10px; margin-right: 10px; padding-left: 10px; padding-right: 10px;">
+                    <label for="question">Your Question :</label>
+                    <input type="text" class="form-control" id="question" name="question" >
+                </div>
+                <button type="submit" style="background-color: #BB3A83" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        let selectedLanguage = 'en'; // Global variable to store the selected language
+
+        document.getElementById('questionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const question = document.getElementById('question').value;
+            const chatHistoryDiv = document.getElementById('chatHistory');
+            const url = `/chat_stream/${encodeURIComponent(question)}?language=${selectedLanguage}`;
+
+            // Append user question to chat history
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'chat-message user-message';
+            userMessageDiv.innerHTML = `<span class="user-icon">👤</span>${question}`;
+            chatHistoryDiv.appendChild(userMessageDiv);
+
+            // Clear the question input box
+            document.getElementById('question').value = '';
+            document.getElementById('question').focus();
+
+            const aiMessageDiv = document.createElement('div');
+            aiMessageDiv.className = 'chat-message ai-message';
+            aiMessageDiv.innerHTML = `<span class="message-icon">🤖</span>`;
+            chatHistoryDiv.appendChild(aiMessageDiv);
+
+            const eventSource = new EventSource(url);
+
+            eventSource.onmessage = function(event) {
+                try {
+                    if (event.data.trim()) {
+                        const data = JSON.parse(event.data);
+                        if (data.data) {
+                            aiMessageDiv.innerHTML += data.data;
+                            chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+                        }
+                    }
+                } catch (error) {
+                    const errorMessageDiv = document.createElement('div');
+                    errorMessageDiv.className = 'chat-message ai-message';
+                    errorMessageDiv.innerHTML = `<span class="message-icon">🤖</span>An error occurred: ${error.message}`;
+                    chatHistoryDiv.appendChild(errorMessageDiv);
+                }
+            };
+
+            eventSource.onerror = function() {
+                if (eventSource.readyState === EventSource.CLOSED) {
+                    // Do nothing
+                } else if (eventSource.readyState === EventSource.CONNECTING) {
+                    // Do nothing
+                } else {
+                    const errorMessageDiv = document.createElement('div');
+                    errorMessageDiv.className = 'chat-message ai-message';
+                    errorMessageDiv.innerHTML = `<span class="message-icon">🤖</span>An error occurred while streaming.`;
+                    chatHistoryDiv.appendChild(errorMessageDiv);
+                }
+                eventSource.close();
+            };
+        });
+
+        document.getElementById('languageSelect').addEventListener('change', function() {
+            selectedLanguage = this.value; // Update the global variable
+        });
+
+        function extractChatHistory() {
+            const chatHistoryDiv = document.getElementById('chatHistory');
+            const chatMessages = chatHistoryDiv.getElementsByClassName('chat-message');
+            const chatHistory = [];
+
+            for (let message of chatMessages) {
+                if (message.classList.contains('user-message')) {
+                    chatHistory.push({ "Human": message.textContent });
+                } else if (message.classList.contains('ai-message')) {
+                    chatHistory.push({ "AI": message.textContent });
+                }
+            }
+
+            return chatHistory;
+        }
+
+        function exportPDF() {
+            const chatHistory = extractChatHistory();
+
+            fetch('/export_pdf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ chat_history: chatHistory, language: selectedLanguage })
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'chat_summary.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Error exporting PDF:', error));
+        }
+
+        function toggleChatWindow() {
+            var chatWindow = document.getElementById('chatWindow');
+            if (chatWindow.style.display === 'none' || chatWindow.style.display === '') {
+                chatWindow.style.display = 'flex';
+            } else {
+                chatWindow.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

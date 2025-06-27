@@ -1,0 +1,74 @@
+  .chat-footer {
+            padding: 10px;
+            border-top: 1px solid #ccc;
+            background-color: #f8f9fa;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+
+
+
+      <button style="width: 100px; height: 100px; background-color: #BB3A83" class="floating-button" onclick="toggleChatWindow()">💬</button>
+
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            Chat
+            <div>
+                <select id="languageSelect" class="icon-button">
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="hi">Hindi</option>
+                    <option value="zh">Mandarin</option>
+                </select>
+                <button class="icon-button" onclick="exportPDF()">📄</button>
+                <button class="minimize-button" onclick="toggleChatWindow()">−</button>
+            </div>
+        </div>
+        <div class="chat-body">
+            <div id="chatHistory" class="chat-history"></div>
+        </div>
+        <div class="chat-footer">
+            <form id="questionForm" class="mb-4">
+                <div class="form-group">
+                    <label for="question">Question:</label>
+                    <input type="text" class="form-control" id="question" name="question" required>
+                </div>
+                <button type="submit" style="background-color: #BB3A83" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </div>
+
+
+
+
+
+  .chat-window {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 60%;
+            height: 100%;
+            border-left: 1px solid #ccc;
+            background-color: white;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+            display: none;
+            flex-direction: column;
+            resize: horizontal;
+            overflow: hidden;
+        }
+        .chat-header {
+            background-color: #BB3A83;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-body {
+            padding: 10px;
+            height: calc(100% - 110px); /* Adjusted height to account for header and footer */
+            overflow-y: auto;
+        }
